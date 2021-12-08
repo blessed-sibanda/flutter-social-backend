@@ -18,6 +18,4 @@ class User < ApplicationRecord
   has_many :heros, class_name: "Relationship",
                    foreign_key: "follower_id", dependent: :destroy
   has_many :following, through: :heros, source: :followed
-
-  scope :paginated, ->(page = 1) { User.page(page).per(User.per_page).order(:created_at) }
 end

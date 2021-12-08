@@ -18,6 +18,7 @@ end
 json.following do
   current_page = params.fetch(:following_page, 1).to_i
   following = User.page(current_page).per(User.per_page).where(id: @user.following_ids)
+
   json._links do
     json.url user_url(@user, following_page: current_page)
     json.first_page user_url(@user, following_page: 1)
@@ -26,5 +27,5 @@ json.following do
     json.last_page user_url(@user, following_page: following.count.zero? ? 1 : following.total_pages)
   end
 
-  json.following json.partial! "users/users", users: following
+  json.partial! "users/users", users: following
 end

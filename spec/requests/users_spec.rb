@@ -116,6 +116,61 @@ RSpec.describe "Users", type: :request do
     end
   end
 
+  describe "PUT /users/:id/follow" do
+    let(:user) { create :user }
+
+    context "authenticated user" do
+      before do
+        @token = token_for(user)
+      end
+
+      it "follows user" do
+        user2 = create :user
+        put follow_user_url(user2),
+            xhr: true,
+            headers: { 'Authorization': @token }
+        expect(user2.reload.followers).to include(user)
+        expect(user.reload.following).to include(user2)
+      end
+    end
+
+    context "un-authenticated user" do
+      it "returns 401 unauthorized" do
+        put follow_user_url(user), xhr: true
+        expect(response).to have_http_status(:unauthorized)
+      end
+    end
+  end
+
+  describe "PUT /users/:id/unfollow" do
+    let(:user) { create :user }
+
+    context "authenticated user" do
+      before do
+        @token = token_for(user)
+      end
+
+      it "un-follows user" do
+        user2 = create :user
+        user2.followers << user
+        expect(user2.reload.followers).to include(user)
+        expect(user.reload.following).to include(user2)
+        put unfollow_user_url(user2),
+            xhr: true,
+            headers: { 'Authorization': @token }
+        expect(user2.reload.followers).to_not include(user)
+        expect(user.reload.following).to_not include(user2)
+      end
+    end
+
+    context "un-authenticated user" do
+      it "returns 401 unauthorized" do
+        put unfollow_user_url(user), xhr: true
+        expect(response).to have_http_status(:unauthorized)
+      end
+    end
+  end
+
   describe "GET /users/:id" do
     let!(:user) { create :user }
 

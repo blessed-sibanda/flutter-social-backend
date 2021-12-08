@@ -119,16 +119,30 @@ RSpec.describe "Users", type: :request do
   describe "GET /users/:id" do
     let!(:user) { create :user }
 
+    let!(:user1) { create :user }
+    let!(:user2) { create :user }
+    let!(:user3) { create :user }
+
     context "authenticated user" do
       before do
+        user.followers << user1
+        user.followers << user2
+        user.following << user3
+        
         @token = token_for(user)
-        get "/users/#{User.all.sample.id}",
+        get "/users/#{user.id}",
             xhr: true,
             headers: { 'Authorization': @token }
       end
 
       it "returns http success" do
         expect(response).to have_http_status(:success)
+      end
+
+      it "returns user's followers and followings" do
+        expect(json["followers"].length).to eq 2
+        expect(json["following"][0]["name"]).to eq user3.name
+        expect(json["following"].length).to eq 1
       end
 
       it "returns user email" do

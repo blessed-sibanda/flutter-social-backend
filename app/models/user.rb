@@ -10,4 +10,12 @@ class User < ApplicationRecord
   validates :name, presence: true, length: { in: 3..30 }
 
   has_one_attached :avatar_image
+
+  has_many :fans, class_name: "Relationship",
+                  foreign_key: "followed_id", dependent: :destroy
+  has_many :followers, through: :fans, source: :follower
+
+  has_many :heros, class_name: "Relationship",
+                   foreign_key: "follower_id", dependent: :destroy
+  has_many :following, through: :heros, source: :followed
 end

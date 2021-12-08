@@ -8,10 +8,4 @@ json._links do
   json.last_page users_url(page: @users.total_pages)
 end
 
-json._pagination do
-  json.per_page User.per_page
-  json.total_count @users.total_count
-  json.total_pages @users.total_pages
-end
-
-json.users @users, partial: "users/user", as: :user
+json.partial! "users/users", users: @users

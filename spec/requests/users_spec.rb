@@ -92,7 +92,7 @@ RSpec.describe "Users", type: :request do
 
   describe "GET /users" do
     before do
-      create_list :user, rand((User.per_page)..(rand(2..5) * User.per_page))
+      create_list :user, rand((rand(1..3) * User.per_page)..(rand(4..6) * User.per_page))
       get "/users", xhr: true
     end
 
@@ -101,52 +101,72 @@ RSpec.describe "Users", type: :request do
     end
 
     it "returns a paginated list of users without email addresses" do
-      expect(json["users"].length <= User.per_page).to be_truthy
+      expect(json["data"].length <= User.per_page).to be_truthy
       expect(json["_pagination"]).not_to be_nil
       expect(json["_links"]["next_page"]).not_to be_nil
       expect(json["_links"]).not_to be_nil
       total_pages = (User.count.to_f / User.per_page).ceil
       expect(json["_pagination"]["total_pages"]).to eq total_pages
-      expect(json["users"][rand(User.per_page)]["email"]).to be_nil
-      expect(json["users"][rand(User.per_page)]["name"]).not_to be_nil
+      expect(json["data"][rand(User.per_page)]["email"]).to be_nil
+      expect(json["data"][rand(User.per_page)]["name"]).not_to be_nil
     end
 
     it "orders results in ascending order of creation time" do
-      expect(json["users"][0]["id"] < json["users"][-1]["id"]).to be_truthy
+      expect(json["data"][0]["id"] < json["data"][-1]["id"]).to be_truthy
     end
   end
 
   describe "GET /users/:id" do
     let!(:user) { create :user }
 
-    let!(:user1) { create :user }
-    let!(:user2) { create :user }
-    let!(:user3) { create :user }
-
     context "authenticated user" do
-      before do
-        user.followers << user1
-        user.followers << user2
-        user.following << user3
-        
+      it "returns user email" do
         @token = token_for(user)
         get "/users/#{user.id}",
             xhr: true,
             headers: { 'Authorization': @token }
-      end
-
-      it "returns http success" do
+        expect(json["email"]).not_to be_nil
         expect(response).to have_http_status(:success)
       end
 
-      it "returns user's followers and followings" do
-        expect(json["followers"].length).to eq 2
-        expect(json["following"][0]["name"]).to eq user3.name
-        expect(json["following"].length).to eq 1
-      end
+      context "user with followers/following" do
+        before do
+          random_count1 = rand((rand(1..3) * User.per_page)..(rand(5..8) * User.per_page))
+          user.followers << create_list(:user, random_count1)
 
-      it "returns user email" do
-        expect(json["email"]).not_to be_nil
+          random_count2 = rand((rand(1..3) * User.per_page)..(rand(5..8) * User.per_page))
+          user.following << create_list(:user, random_count2)
+
+          token = token_for(create :user)
+          @opts = { xhr: true, headers: { 'Authorization': token } }
+          get "/users/#{user.id}", **@opts
+        end
+
+        it "returns paginated list of followers" do
+          expect(json["followers"]["data"].length).to eq(User.per_page)
+          expect(json["followers"]["_links"]["next_page"]).to eq(user_url(user, followers_page: 2))
+          total_followers_page = (user.followers.count / User.per_page.to_f).ceil
+          expect(json["followers"]["_links"]["last_page"]).to eq(user_url(user, followers_page: total_followers_page))
+          get json["followers"]["_links"]["next_page"], **@opts
+          expect(json["followers"]["_links"]["prev_page"]).to eq(user_url(user, followers_page: 1))
+          expect(json["followers"]["_links"]["url"]).to eq(user_url(user, followers_page: 2))
+          get json["followers"]["_links"]["last_page"], **@opts
+          expect(json["followers"]["_links"]["first_page"]).to eq(user_url(user, followers_page: 1))
+          expect(json["followers"]["_links"]["next_page"]).to be_nil
+        end
+
+        it "returns paginated list of following" do
+          expect(json["following"]["data"].length).to eq(User.per_page)
+          expect(json["following"]["_links"]["next_page"]).to eq(user_url(user, following_page: 2))
+          total_following_page = (user.following.count / User.per_page.to_f).ceil
+          expect(json["following"]["_links"]["last_page"]).to eq(user_url(user, following_page: total_following_page))
+          get json["following"]["_links"]["next_page"], **@opts
+          expect(json["following"]["_links"]["prev_page"]).to eq(user_url(user, following_page: 1))
+          expect(json["following"]["_links"]["url"]).to eq(user_url(user, following_page: 2))
+          get json["following"]["_links"]["last_page"], **@opts
+          expect(json["following"]["_links"]["first_page"]).to eq(user_url(user, following_page: 1))
+          expect(json["following"]["_links"]["next_page"]).to be_nil
+        end
       end
     end
 

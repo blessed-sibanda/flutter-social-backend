@@ -11,6 +11,7 @@ end
 json._pagination do
   json.per_page Post.per_page
   json.total_count @posts.total_count
+  json.count @posts.count
   json.total_pages @posts.total_pages
 end
 

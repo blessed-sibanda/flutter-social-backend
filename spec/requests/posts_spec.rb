@@ -69,7 +69,8 @@ RSpec.describe "/posts", type: :request do
 
       it "returns a paginated list of posts" do
         expect(json["data"].length).to eq(Post.per_page)
-        expect(json["_pagination"]).not_to be_nil
+        expect(json["_pagination"]["count"] <= Post.per_page).to be_truthy
+        expect(json["_pagination"]["total_count"]).to eq Post.count
         expect(json["_links"]["next_page"]).not_to be_nil
         expect(json["_links"]["prev_page"]).to be_nil
         expect(json["_links"]).not_to be_nil

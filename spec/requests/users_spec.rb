@@ -103,6 +103,8 @@ RSpec.describe "Users", type: :request do
     it "returns a paginated list of users without email addresses" do
       expect(json["data"].length <= User.per_page).to be_truthy
       expect(json["_pagination"]).not_to be_nil
+      expect(json["_pagination"]["count"] <= User.per_page).to be_truthy
+      expect(json["_pagination"]["total_count"]).to eq User.count
       expect(json["_links"]["next_page"]).not_to be_nil
       expect(json["_links"]).not_to be_nil
       total_pages = (User.count.to_f / User.per_page).ceil
@@ -221,6 +223,35 @@ RSpec.describe "Users", type: :request do
           get json["following"]["_links"]["last_page"], **@opts
           expect(json["following"]["_links"]["first_page"]).to eq(user_url(user, following_page: 1))
           expect(json["following"]["_links"]["next_page"]).to be_nil
+        end
+      end
+
+      context "with posts" do
+        before do
+          random_count = rand((rand(1..3) * Post.per_page)..(rand(5..8) * Post.per_page))
+          create_list(:post, random_count, user: user)
+
+          token = token_for(create :user)
+          @opts = { xhr: true, headers: { 'Authorization': token } }
+          get "/users/#{user.id}", **@opts
+        end
+
+        it "returns paginated list of user's posts in descending order of creation" do
+          # check descending order
+          expect(json["posts"]["data"][0]["id"] > json["posts"]["data"][-1]["id"]).to be_truthy
+
+          expect(json["posts"]["data"].length).to eq(Post.per_page)
+          expect(json["posts"]["_pagination"]["count"] <= Post.per_page).to be_truthy
+          expect(json["posts"]["_pagination"]["total_count"]).to eq(user.posts.count)
+          expect(json["posts"]["_links"]["next_page"]).to eq(user_url(user, posts_page: 2))
+          total_posts_page = (user.posts.count / Post.per_page.to_f).ceil
+          expect(json["posts"]["_links"]["last_page"]).to eq(user_url(user, posts_page: total_posts_page))
+          get json["posts"]["_links"]["next_page"], **@opts
+          expect(json["posts"]["_links"]["prev_page"]).to eq(user_url(user, posts_page: 1))
+          expect(json["posts"]["_links"]["url"]).to eq(user_url(user, posts_page: 2))
+          get json["posts"]["_links"]["last_page"], **@opts
+          expect(json["posts"]["_links"]["first_page"]).to eq(user_url(user, posts_page: 1))
+          expect(json["posts"]["_links"]["next_page"]).to be_nil
         end
       end
     end

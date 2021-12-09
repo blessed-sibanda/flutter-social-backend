@@ -12,6 +12,11 @@ class PostsController < ApplicationController
   # GET /posts/1
   # GET /posts/1.json
   def show
+    current_page = params.fetch(:comments_page, 1).to_i
+    @comments = Comment.page(current_page).per(Comment.per_page).where(id: @post.comment_ids).order(:created_at)
+
+    current_page = params.fetch(:likes_page, 1).to_i
+    @users_liked = User.page(current_page).per(Like.per_page).where(likes: @post.likes).order(:created_at)
   end
 
   def like

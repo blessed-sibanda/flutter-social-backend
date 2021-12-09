@@ -15,4 +15,6 @@ json._pagination do
   json.total_pages @posts.total_pages
 end
 
-json.data @posts, partial: "posts/post", as: :post
+json.cache! [@posts] do
+  json.data @posts, partial: "posts/post", as: :post, cached: true
+end

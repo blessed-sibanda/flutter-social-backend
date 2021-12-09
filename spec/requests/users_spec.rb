@@ -226,6 +226,15 @@ RSpec.describe "Users", type: :request do
         end
       end
 
+      context "with about info" do
+        it "displays user about" do
+          user = create :user, about: "This is my information"
+          @opts = { xhr: true, headers: { 'Authorization': token_for(create :user) } }
+          get "/users/#{user.id}", **@opts
+          expect(json["about"]).to eq user.about
+        end
+      end
+
       context "with posts" do
         before do
           random_count = rand((rand(1..3) * Post.per_page)..(rand(5..8) * Post.per_page))
@@ -381,6 +390,15 @@ RSpec.describe "Users", type: :request do
           expect(user.reload.name).to eq valid_attributes[:user][:name]
           expect(user.avatar_image.persisted?).to_not be_nil
           expect(response).to have_http_status(:success)
+        end
+
+        context "with about" do
+          it "updates the user about info" do
+            valid_attributes[:user][:current_password] = "my-secret"
+            valid_attributes[:user][:about] = "This is my about"
+            put "/api/signup", xhr: true, params: valid_attributes, headers: { 'Authorization': @token }
+            expect(user.reload.about).to eq valid_attributes[:user][:about]
+          end
         end
       end
 

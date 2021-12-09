@@ -4,6 +4,7 @@ FactoryBot.define do
     email { "user-#{SecureRandom.hex(4)}@example.com" }
     password { "my-secret" }
     confirmed_at { Time.now }
+    about { "" }
   end
 
   trait :unconfirmed do

@@ -88,6 +88,16 @@ RSpec.describe "/posts", type: :request do
       expect(json["data"][0]["likes"]).to eq random
     end
 
+    it "returns image_url for posts with images" do
+      # first create post with image
+      valid_attributes[:image] = Rack::Test::UploadedFile.new("#{Rails.root}/spec/fixtures/user.jpg")
+      post posts_url, xhr: true,
+                      params: { post: valid_attributes }, headers: valid_headers
+
+      get posts_url, headers: valid_headers, as: :json
+      expect(json["data"][0]["image_url"]).not_to be_nil
+    end
+
     it "returns user details along with each post" do
       p = create(:post)
       get posts_url, headers: valid_headers, as: :json
@@ -233,6 +243,7 @@ RSpec.describe "/posts", type: :request do
           post posts_url,
                params: { post: valid_attributes }, headers: valid_headers, as: :json
         }.to change(Post, :count).by(1)
+        expect(Post.last.image.persisted?).to be_nil
       end
 
       it "renders a JSON response with the new post" do
@@ -240,6 +251,14 @@ RSpec.describe "/posts", type: :request do
              params: { post: valid_attributes }, headers: valid_headers, as: :json
         expect(response).to have_http_status(:created)
         expect(response.content_type).to match(a_string_including("application/json"))
+      end
+
+      it "creates a new post with image" do
+        valid_attributes[:image] = Rack::Test::UploadedFile.new("#{Rails.root}/spec/fixtures/user.jpg")
+        post posts_url, xhr: true,
+                        params: { post: valid_attributes }, headers: valid_headers
+        expect(Post.last.image.persisted?).not_to be_nil
+        expect(Post.last.body).to eq valid_attributes[:body]
       end
     end
 

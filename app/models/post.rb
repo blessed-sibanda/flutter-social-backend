@@ -5,4 +5,5 @@ class Post < ApplicationRecord
   has_many :likes, as: :likable
 
   validates :body, presence: true, length: { minimum: 10 }
+  has_one_attached :image
 end

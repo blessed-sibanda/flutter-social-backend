@@ -49,7 +49,7 @@ class PostsController < ApplicationController
 
   # Only allow a list of trusted parameters through.
   def post_params
-    params.require(:post).permit(:body)
+    params.require(:post).permit(:body, :image)
   end
 
   def verify_user

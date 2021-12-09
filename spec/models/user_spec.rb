@@ -6,6 +6,10 @@ RSpec.describe User, type: :model do
     it { should validate_length_of(:name).is_at_least(3).is_at_most(30) }
   end
 
+  it do
+    expect(User.per_page > 0).to be_truthy
+  end
+
   describe "associations" do
     it { should have_one_attached(:avatar_image) }
     it {
@@ -22,6 +26,8 @@ RSpec.describe User, type: :model do
     it {
       should have_many(:following).through(:heros).source(:followed)
     }
+    it { should have_many(:posts) }
+    it { should have_many(:comments) }
   end
 
   it "has relationships with other users" do

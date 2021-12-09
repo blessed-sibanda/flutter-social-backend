@@ -102,6 +102,41 @@ RSpec.describe "/posts", type: :request do
       get post_url(create :post), as: :json
       expect(response).to have_http_status(:unauthorized)
     end
+
+    context "with comments" do
+      it "returns post comments" do
+        post1 = create :post
+        post1.comments << create_list(:comment, 3, post: post1)
+        get post_url(post1), headers: valid_headers, as: :json
+        expect(json["comments"]).not_to be_nil
+      end
+
+      it "paginates post comments in ascending order of creation time" do
+        post1 = create :post
+        random_count = rand((rand(2..4) * Comment.per_page)..(rand(5..8) * Comment.per_page))
+        create_list(:comment, random_count, post: post1)
+
+        token = token_for(create :user)
+        @opts = { xhr: true, headers: { 'Authorization': token } }
+        get post_url(post1), **@opts
+
+        # check ascending order
+        expect(json["comments"]["data"][0]["id"] < json["comments"]["data"][-1]["id"]).to be_truthy
+
+        expect(json["comments"]["data"].length).to eq(Comment.per_page)
+        expect(json["comments"]["_pagination"]["count"] <= Comment.per_page).to be_truthy
+        expect(json["comments"]["_pagination"]["total_count"]).to eq(post1.comments.count)
+        expect(json["comments"]["_links"]["next_page"]).to eq(post_url(post1, comments_page: 2))
+        total_comments_page = (post1.comments.count / Comment.per_page.to_f).ceil
+        expect(json["comments"]["_links"]["last_page"]).to eq(post_url(post1, comments_page: total_comments_page))
+        get json["comments"]["_links"]["next_page"], **@opts
+        expect(json["comments"]["_links"]["prev_page"]).to eq(post_url(post1, comments_page: 1))
+        expect(json["comments"]["_links"]["url"]).to eq(post_url(post1, comments_page: 2))
+        get json["comments"]["_links"]["last_page"], **@opts
+        expect(json["comments"]["_links"]["first_page"]).to eq(post_url(post1, comments_page: 1))
+        expect(json["comments"]["_links"]["next_page"]).to be_nil
+      end
+    end
   end
 
   describe "POST /create" do

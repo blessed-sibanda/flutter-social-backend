@@ -20,4 +20,5 @@ class User < ApplicationRecord
   has_many :following, through: :heros, source: :followed
 
   has_many :posts
+  has_many :comments
 end

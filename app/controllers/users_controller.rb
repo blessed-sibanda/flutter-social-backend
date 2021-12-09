@@ -7,6 +7,14 @@ class UsersController < ApplicationController
   end
 
   def show
+    current_page = params.fetch(:followers_page, 1).to_i
+    @followers = User.page(current_page).per(User.per_page).where(id: @user.follower_ids)
+
+    current_page = params.fetch(:following_page, 1).to_i
+    @following = User.page(current_page).per(User.per_page).where(id: @user.following_ids)
+
+    current_page = params.fetch(:posts_page, 1).to_i
+    @posts = Post.page(current_page).per(Post.per_page).where(user_id: @user.id).order(created_at: :desc)
   end
 
   def follow

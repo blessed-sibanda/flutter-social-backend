@@ -1,6 +1,6 @@
 class PostsController < ApplicationController
   before_action :authenticate_user!
-  before_action :set_post, only: %i[destroy show]
+  before_action :set_post, only: %i[destroy show like unlike]
   before_action :verify_user, only: [:destroy]
 
   # GET /posts
@@ -12,6 +12,14 @@ class PostsController < ApplicationController
   # GET /posts/1
   # GET /posts/1.json
   def show
+  end
+
+  def like
+    @post.likes.create user: current_user
+  end
+
+  def unlike
+    current_user.likes.find_by(likable: @post)&.destroy
   end
 
   # POST /posts

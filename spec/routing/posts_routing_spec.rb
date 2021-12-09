@@ -10,6 +10,14 @@ RSpec.describe PostsController, type: :routing do
       expect(get: "/posts/1").to route_to("posts#show", id: "1")
     end
 
+    it "routes to #like" do
+      expect(put: "/posts/1/like").to route_to("posts#like", id: "1")
+    end
+
+    it "routes to #unlike" do
+      expect(put: "/posts/1/unlike").to route_to("posts#unlike", id: "1")
+    end
+
     it "routes to #create" do
       expect(post: "/posts").to route_to("posts#create")
     end

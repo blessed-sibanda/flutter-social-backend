@@ -40,11 +40,52 @@ RSpec.describe "/posts", type: :request do
     }
   }
 
+  describe "PUT /like" do
+    let!(:post1) { create :post }
+
+    it "returns 401 unauthorized when user is unauthenticated" do
+      put like_post_url(post1), as: :json
+      expect(response).to have_http_status(:unauthorized)
+    end
+
+    it "likes post" do
+      put like_post_url(post1), as: :json, headers: valid_headers
+      post1.reload
+      expect(post1.likes.count).to eq 1
+    end
+  end
+
+  describe "PUT /unlike" do
+    let!(:post1) { create :post }
+
+    it "returns 401 unauthorized when user is unauthenticated" do
+      put unlike_post_url(post1), as: :json
+      expect(response).to have_http_status(:unauthorized)
+    end
+
+    it "unlikes post" do
+      create :like, likable: post1, user: user
+      post1.reload
+      expect(post1.likes.count).to eq 1
+      put unlike_post_url(post1), as: :json, headers: valid_headers
+      post1.reload
+      expect(post1.likes.count).to eq 0
+    end
+  end
+
   describe "GET /index" do
     it "renders a successful response" do
       create(:post)
       get posts_url, headers: valid_headers, as: :json
       expect(response).to be_successful
+    end
+
+    it "returns # of likes for each post" do
+      post1 = create(:post)
+      random = rand(10)
+      create_list :like, random, likable: post1
+      get posts_url, headers: valid_headers, as: :json
+      expect(json["data"][0]["likes"]).to eq random
     end
 
     it "returns user details along with each post" do
@@ -101,6 +142,46 @@ RSpec.describe "/posts", type: :request do
     it "returns 401 unauthorized when user is unauthenticated" do
       get post_url(create :post), as: :json
       expect(response).to have_http_status(:unauthorized)
+    end
+
+    context "with likes" do
+      it "returns # of likes for each post" do
+        post1 = create(:post)
+        random = rand(10)
+        create_list :like, random, likable: post1
+        get posts_url, headers: valid_headers, as: :json
+        expect(json["data"][0]["likes"]).to eq random
+      end
+
+      it "paginates post likes in ascending order of creation time" do
+        post1 = create :post
+        random_count = rand((rand(2..4) * Like.per_page)..(rand(5..8) * Like.per_page))
+        create_list(:like, random_count, likable: post1)
+
+        token = token_for(create :user)
+        @opts = { xhr: true, headers: { 'Authorization': token } }
+        get post_url(post1), **@opts
+
+        index = rand Like.per_page
+        expect(json["users_liked"]["data"][index]["id"]).to eq post1.likes[index].user.id
+        expect(json["users_liked"]["data"][index]["name"]).to eq post1.likes[index].user.name
+
+        # check ascending order
+        expect(json["users_liked"]["data"][0]["id"] < json["users_liked"]["data"][-1]["id"]).to be_truthy
+
+        expect(json["users_liked"]["data"].length).to eq(Like.per_page)
+        expect(json["users_liked"]["_pagination"]["count"] <= Like.per_page).to be_truthy
+        expect(json["users_liked"]["_pagination"]["total_count"]).to eq(post1.likes.count)
+        expect(json["users_liked"]["_links"]["next_page"]).to eq(post_url(post1, likes_page: 2))
+        total_likes_page = (post1.likes.count / Like.per_page.to_f).ceil
+        expect(json["users_liked"]["_links"]["last_page"]).to eq(post_url(post1, likes_page: total_likes_page))
+        get json["users_liked"]["_links"]["next_page"], **@opts
+        expect(json["users_liked"]["_links"]["prev_page"]).to eq(post_url(post1, likes_page: 1))
+        expect(json["users_liked"]["_links"]["url"]).to eq(post_url(post1, likes_page: 2))
+        get json["users_liked"]["_links"]["last_page"], **@opts
+        expect(json["users_liked"]["_links"]["first_page"]).to eq(post_url(post1, likes_page: 1))
+        expect(json["users_liked"]["_links"]["next_page"]).to be_nil
+      end
     end
 
     context "with comments" do

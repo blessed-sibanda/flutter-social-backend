@@ -28,6 +28,7 @@ RSpec.describe User, type: :model do
     }
     it { should have_many(:posts) }
     it { should have_many(:comments) }
+    it { should have_many(:likes) }
   end
 
   it "has relationships with other users" do

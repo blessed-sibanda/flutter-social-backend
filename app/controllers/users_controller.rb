@@ -14,7 +14,7 @@ class UsersController < ApplicationController
   end
 
   def unfollow
-    @user.fans.where(follower: current_user).first&.destroy
+    @user.followers.delete current_user
   end
 
   private

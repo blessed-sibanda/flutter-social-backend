@@ -21,3 +21,27 @@ json.comments do
 
   json.data comments, partial: "comments/comment", as: :comment
 end
+
+json.users_liked do
+  current_page = params.fetch(:likes_page, 1).to_i
+  likes = Like.page(current_page).per(Like.per_page).where(likable: @post).order(:created_at)
+
+  json._links do
+    json.url post_url(@post, likes_page: current_page)
+    json.first_page post_url(@post, likes_page: 1)
+    json.prev_page post_url(@post, likes_page: current_page - 1) if (current_page > 1)
+    json.next_page post_url(@post, likes_page: current_page + 1) if likes.next_page
+    json.last_page post_url(@post, likes_page: likes.total_pages)
+  end
+
+  json._pagination do
+    json.per_page Like.per_page
+    json.total_count likes.total_count
+    json.count likes.count
+    json.total_pages likes.total_pages
+  end
+
+  users = likes.map(&:user)
+
+  json.data users, partial: "users/user", as: :user
+end

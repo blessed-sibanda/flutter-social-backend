@@ -143,53 +143,6 @@ RSpec.describe "/posts", type: :request do
     end
   end
 
-  describe "PATCH /update" do
-    let!(:post1) { create :post, user: user }
-
-    let(:new_attributes) {
-      {
-        body: "New body updated**",
-      }
-    }
-
-    it "returns 401 unauthorized when user is unauthenticated" do
-      patch post_url(post1),
-            params: { post: new_attributes }, as: :json
-      expect(response).to have_http_status(:unauthorized)
-    end
-
-    it "returns 403 forbidden when user is not owner of post" do
-      post1 = create(:post)
-      patch post_url(post1),
-            params: { post: new_attributes }, headers: valid_headers, as: :json
-      expect(response).to have_http_status(:forbidden)
-    end
-
-    context "with valid parameters" do
-      it "updates the requested post" do
-        patch post_url(post1),
-              params: { post: new_attributes }, headers: valid_headers, as: :json
-        post1.reload
-        expect(post1.body).to eq "New body updated**"
-      end
-
-      it "renders a JSON response with the post" do
-        patch post_url(post1),
-              params: { post: new_attributes }, headers: valid_headers, as: :json
-        expect(response).to have_http_status(:ok)
-        expect(response.content_type).to match(a_string_including("application/json"))
-      end
-    end
-
-    context "with invalid parameters" do
-      it "renders a JSON response with errors for the post" do
-        patch post_url(post1),
-              params: { post: invalid_attributes }, headers: valid_headers, as: :json
-        expect(response).to have_http_status(:unprocessable_entity)
-      end
-    end
-  end
-
   describe "DELETE /destroy" do
     let!(:post1) { create :post, user: user }
 
@@ -201,6 +154,7 @@ RSpec.describe "/posts", type: :request do
     it "returns 403 forbidden when user is not owner of post" do
       delete post_url(create(:post)), headers: valid_headers, as: :json
       expect(response).to have_http_status(:forbidden)
+      expect(json["message"]).to eq "Only the author of the post is allowed perform this operation"
     end
 
     it "destroys the requested post" do

@@ -1,7 +1,7 @@
 class PostsController < ApplicationController
   before_action :authenticate_user!
-  before_action :set_post, only: %i[update destroy show]
-  before_action :verify_user, only: [:update, :destroy]
+  before_action :set_post, only: %i[destroy show]
+  before_action :verify_user, only: [:destroy]
 
   # GET /posts
   # GET /posts.json
@@ -21,16 +21,6 @@ class PostsController < ApplicationController
 
     if @post.save
       render :show, status: :created, location: @post
-    else
-      render json: @post.errors, status: :unprocessable_entity
-    end
-  end
-
-  # PATCH/PUT /posts/1
-  # PATCH/PUT /posts/1.json
-  def update
-    if @post.update(post_params)
-      render :show, status: :ok, location: @post
     else
       render json: @post.errors, status: :unprocessable_entity
     end

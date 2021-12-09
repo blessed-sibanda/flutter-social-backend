@@ -77,7 +77,7 @@ RSpec.describe "Users", type: :request do
     end
 
     context "correct credentials" do
-      it "returns successful response" do
+      it "returns 201 response" do
         user = create :user
         post "/api/login", xhr: true, params: {
                              user: {
@@ -85,14 +85,14 @@ RSpec.describe "Users", type: :request do
                                password: user.password,
                              },
                            }
-        expect(response).to have_http_status(:success)
+        expect(response).to have_http_status(:created)
       end
     end
   end
 
   describe "GET /users" do
     before do
-      create_list :user, rand((rand(1..3) * User.per_page)..(rand(4..6) * User.per_page))
+      create_list :user, rand((rand(2..3) * User.per_page)..(rand(4..6) * User.per_page))
       get "/users", xhr: true
     end
 

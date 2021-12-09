@@ -47,9 +47,46 @@ RSpec.describe "/posts", type: :request do
       expect(response).to be_successful
     end
 
+    it "returns user details along with each post" do
+      p = create(:post)
+      get posts_url, headers: valid_headers, as: :json
+      expect(json["data"][0]["user"]["name"]).to eq p.user.name
+      expect(json["data"][0]["user"]["email"]).to be_nil
+      expect(json["data"][0]["user"]["id"]).to eq p.user.id
+      expect(json["data"][0]["user"]["url"]).to eq user_url(p.user, format: :json)
+    end
+
     it "returns 401 unauthorized when user is unauthenticated" do
       get posts_url, as: :json
       expect(response).to have_http_status(:unauthorized)
+    end
+
+    context "many posts" do
+      before do
+        create_list :post, rand((rand(2..3) * Post.per_page)..(rand(4..6) * Post.per_page))
+        get "/posts", xhr: true, headers: valid_headers
+      end
+
+      it "returns a paginated list of posts" do
+        expect(json["data"].length).to eq(Post.per_page)
+        expect(json["_pagination"]).not_to be_nil
+        expect(json["_links"]["next_page"]).not_to be_nil
+        expect(json["_links"]["prev_page"]).to be_nil
+        expect(json["_links"]).not_to be_nil
+        total_pages = (Post.count.to_f / Post.per_page).ceil
+        expect(json["_pagination"]["total_pages"]).to eq total_pages
+        expect(json["_pagination"]["total_count"]).to eq Post.count
+        expect(json["_links"]["last_page"]).to eq posts_url(page: total_pages)
+
+        get json["_links"]["last_page"], headers: valid_headers, xhr: true
+        expect(json["_links"]["next_page"]).to be_nil
+        expect(json["_links"]["prev_page"]).not_to be_nil
+        expect(json["data"].length <= Post.per_page).to be_truthy
+      end
+
+      it "orders results in descending order of creation time" do
+        expect(json["data"][0]["id"] > json["data"][-1]["id"]).to be_truthy
+      end
     end
   end
 

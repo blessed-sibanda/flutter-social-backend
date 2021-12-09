@@ -22,4 +22,8 @@ class User < ApplicationRecord
   has_many :posts
   has_many :comments
   has_many :likes
+
+  def who_to_follow
+    User.where.not(id: following_ids + [id])
+  end
 end

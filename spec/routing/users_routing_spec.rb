@@ -17,5 +17,9 @@ RSpec.describe UsersController, type: :routing do
     it "routes to #show" do
       expect(get: "/users/1").to route_to("users#show", id: "1")
     end
+
+    it "routes to #find_people" do
+      expect(get: "/users/find_people").to route_to("users#find_people")
+    end
   end
 end

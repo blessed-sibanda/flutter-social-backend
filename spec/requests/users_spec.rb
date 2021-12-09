@@ -294,6 +294,50 @@ RSpec.describe "Users", type: :request do
     end
   end
 
+  describe "GET /users/find_people" do
+    it "returns 401 unauthorized when user is unauthenticated" do
+      get find_people_users_url, as: :json
+      expect(response).to have_http_status(:unauthorized)
+    end
+
+    context "authenticated user" do
+      let!(:user) { create :user }
+      let!(:user1) { create :user }
+      let!(:user2) { create :user }
+      let!(:user3) { create :user }
+
+      before do
+        user.following << user2
+        create_list :user, rand((2 * User.per_page)..(4 * User.per_page))
+
+        @token = token_for(user)
+        get find_people_users_url, as: :json, headers: { 'Authorization': @token }
+      end
+
+      it "returns a successful response" do
+        expect(response).to have_http_status(:success)
+      end
+
+      it "returns list of unfollowed users" do
+        expect(json["data"][0]["name"]).to eq user1.name
+        expect(json["data"][1]["name"]).to eq user3.name
+      end
+
+      it "paginates list of unfollowed users (without email addresses)" do
+        expect(json["data"].length <= User.per_page).to be_truthy
+        expect(json["_pagination"]).not_to be_nil
+        expect(json["_pagination"]["count"] <= User.per_page).to be_truthy
+        expect(json["_pagination"]["total_count"]).to eq user.who_to_follow.count
+        expect(json["_links"]["next_page"]).not_to be_nil
+        expect(json["_links"]).not_to be_nil
+        total_pages = (user.who_to_follow.count.to_f / User.per_page).ceil
+        expect(json["_pagination"]["total_pages"]).to eq total_pages
+        expect(json["data"][rand(User.per_page)]["email"]).to be_nil
+        expect(json["data"][rand(User.per_page)]["name"]).not_to be_nil
+      end
+    end
+  end
+
   describe "POST /api/signup" do
     context "with valid attributes" do
       it "creates new user" do

@@ -8,6 +8,10 @@ Rails.application.routes.draw do
   end
   # For details on the DSL available within this file, see https://guides.rubyonrails.org/routing.html
   resources :users, only: %i[index show] do
+    collection do
+      get :find_people
+    end
+
     member do
       put :follow
       put :unfollow

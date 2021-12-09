@@ -303,6 +303,95 @@ RSpec.describe "Users", type: :request do
     end
   end
 
+  describe "GET /users/me" do
+    context "un-authenticated user" do
+      it "returns unauthorized" do
+        get me_users_url, xhr: true
+        expect(response).to have_http_status(:unauthorized)
+      end
+    end
+
+    context "authenticated user" do
+      let!(:user) { create :user }
+
+      it "returns the current user" do
+        @token = token_for(user)
+        get me_users_url, xhr: true, headers: { 'Authorization': @token }
+        expect(json["email"]).to eq user.email
+        expect(json["name"]).to eq user.name
+        expect(json["about"]).to eq user.about
+        expect(json["id"]).to eq user.id
+      end
+
+      context "user with followers/following" do
+        before do
+          random_count1 = rand((rand(1..3) * User.per_page)..(rand(5..8) * User.per_page))
+          user.followers << create_list(:user, random_count1)
+
+          random_count2 = rand((rand(1..3) * User.per_page)..(rand(5..8) * User.per_page))
+          user.following << create_list(:user, random_count2)
+
+          @opts = { xhr: true, headers: { 'Authorization': token_for(user) } }
+          get me_users_url, **@opts
+        end
+
+        it "returns paginated list of followers" do
+          expect(json["followers"]["data"].length).to eq(User.per_page)
+          expect(json["followers"]["_links"]["next_page"]).to eq(user_url(user, followers_page: 2))
+          total_followers_page = (user.followers.count / User.per_page.to_f).ceil
+          expect(json["followers"]["_links"]["last_page"]).to eq(user_url(user, followers_page: total_followers_page))
+          get json["followers"]["_links"]["next_page"], **@opts
+          expect(json["followers"]["_links"]["prev_page"]).to eq(user_url(user, followers_page: 1))
+          expect(json["followers"]["_links"]["url"]).to eq(user_url(user, followers_page: 2))
+          get json["followers"]["_links"]["last_page"], **@opts
+          expect(json["followers"]["_links"]["first_page"]).to eq(user_url(user, followers_page: 1))
+          expect(json["followers"]["_links"]["next_page"]).to be_nil
+        end
+
+        it "returns paginated list of following" do
+          expect(json["following"]["data"].length).to eq(User.per_page)
+          expect(json["following"]["_links"]["next_page"]).to eq(user_url(user, following_page: 2))
+          total_following_page = (user.following.count / User.per_page.to_f).ceil
+          expect(json["following"]["_links"]["last_page"]).to eq(user_url(user, following_page: total_following_page))
+          get json["following"]["_links"]["next_page"], **@opts
+          expect(json["following"]["_links"]["prev_page"]).to eq(user_url(user, following_page: 1))
+          expect(json["following"]["_links"]["url"]).to eq(user_url(user, following_page: 2))
+          get json["following"]["_links"]["last_page"], **@opts
+          expect(json["following"]["_links"]["first_page"]).to eq(user_url(user, following_page: 1))
+          expect(json["following"]["_links"]["next_page"]).to be_nil
+        end
+      end
+
+      context "with posts" do
+        before do
+          random_count = rand((rand(1..3) * Post.per_page)..(rand(5..8) * Post.per_page))
+          create_list(:post, random_count, user: user)
+
+          @opts = { xhr: true, headers: { 'Authorization': token_for(user) } }
+          get me_users_url, **@opts
+        end
+
+        it "returns paginated list of user's posts in descending order of creation" do
+          # check descending order
+          expect(json["posts"]["data"][0]["id"] > json["posts"]["data"][-1]["id"]).to be_truthy
+
+          expect(json["posts"]["data"].length).to eq(Post.per_page)
+          expect(json["posts"]["_pagination"]["count"] <= Post.per_page).to be_truthy
+          expect(json["posts"]["_pagination"]["total_count"]).to eq(user.posts.count)
+          expect(json["posts"]["_links"]["next_page"]).to eq(user_url(user, posts_page: 2))
+          total_posts_page = (user.posts.count / Post.per_page.to_f).ceil
+          expect(json["posts"]["_links"]["last_page"]).to eq(user_url(user, posts_page: total_posts_page))
+          get json["posts"]["_links"]["next_page"], **@opts
+          expect(json["posts"]["_links"]["prev_page"]).to eq(user_url(user, posts_page: 1))
+          expect(json["posts"]["_links"]["url"]).to eq(user_url(user, posts_page: 2))
+          get json["posts"]["_links"]["last_page"], **@opts
+          expect(json["posts"]["_links"]["first_page"]).to eq(user_url(user, posts_page: 1))
+          expect(json["posts"]["_links"]["next_page"]).to be_nil
+        end
+      end
+    end
+  end
+
   describe "GET /users/find_people" do
     it "returns 401 unauthorized when user is unauthenticated" do
       get find_people_users_url, as: :json

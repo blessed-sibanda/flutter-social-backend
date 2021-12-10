@@ -425,6 +425,7 @@ RSpec.describe "Users", type: :request do
         expect(json["data"].length <= User.per_page).to be_truthy
         expect(json["_pagination"]).not_to be_nil
         expect(json["_pagination"]["count"] <= User.per_page).to be_truthy
+        expect(json["_pagination"]["page"]).to eq 1
         expect(json["_pagination"]["total_count"]).to eq user.who_to_follow.count
         expect(json["_links"]["next_page"]).not_to be_nil
         expect(json["_links"]).not_to be_nil
@@ -432,6 +433,12 @@ RSpec.describe "Users", type: :request do
         expect(json["_pagination"]["total_pages"]).to eq total_pages
         expect(json["data"][rand(User.per_page)]["email"]).to be_nil
         expect(json["data"][rand(User.per_page)]["name"]).not_to be_nil
+
+        get json["_links"]["next_page"], as: :json, headers: { 'Authorization': @token }
+        expect(json["_pagination"]["page"]).to eq 2
+
+        get json["_links"]["last_page"], as: :json, headers: { 'Authorization': @token }
+        expect(json["_pagination"]["page"]).to eq total_pages
       end
     end
   end

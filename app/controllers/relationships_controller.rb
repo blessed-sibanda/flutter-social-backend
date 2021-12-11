@@ -13,7 +13,9 @@ class RelationshipsController < ApplicationController
   end
 
   def follow
-    @user.followers << current_user unless @user = current_user
+    unless @user == current_user
+      @user.followers << current_user
+    end
   end
 
   def unfollow

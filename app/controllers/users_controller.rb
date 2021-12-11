@@ -1,6 +1,6 @@
 class UsersController < ApplicationController
   before_action :authenticate_user!, except: :index
-  before_action :set_user, except: :index
+  before_action :set_user, only: %i[show posts]
 
   def index
     @users = User.page(params[:page]).per(User.per_page).order(:created_at)

@@ -4,8 +4,11 @@ class CommentsController < ApplicationController
   before_action :set_post
   before_action :verify_user, only: :destroy
 
-  # POST /comments
-  # POST /comments.json
+  def index
+    @comments = Comment.page(params[:page]).per(Comment.per_page)
+      .where(id: @post.comment_ids).order(:created_at)
+  end
+
   def create
     @comment = Comment.new(comment_params)
     @comment.post = @post
@@ -18,15 +21,12 @@ class CommentsController < ApplicationController
     end
   end
 
-  # DELETE /comments/1
-  # DELETE /comments/1.json
   def destroy
     @comment.destroy
   end
 
   private
 
-  # Use callbacks to share common setup or constraints between actions.
   def set_post
     @post = Post.find(params[:post_id])
   end
@@ -35,7 +35,6 @@ class CommentsController < ApplicationController
     @comment = Comment.find(params[:id])
   end
 
-  # Only allow a list of trusted parameters through.
   def comment_params
     params.require(:comment).permit(:body)
   end

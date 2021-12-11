@@ -3,20 +3,11 @@ class PostsController < ApplicationController
   before_action :set_post, only: %i[destroy show like unlike]
   before_action :verify_user, only: [:destroy]
 
-  # GET /posts
-  # GET /posts.json
   def index
     @posts = Post.page(params[:page]).per(Post.per_page).order(created_at: :desc)
   end
 
-  # GET /posts/1
-  # GET /posts/1.json
   def show
-    current_page = params.fetch(:comments_page, 1).to_i
-    @comments = Comment.page(current_page).per(Comment.per_page).where(id: @post.comment_ids).order(:created_at)
-
-    current_page = params.fetch(:likes_page, 1).to_i
-    @users_liked = User.page(current_page).per(Like.per_page).where(likes: @post.likes).order(:created_at)
   end
 
   def like
@@ -27,8 +18,6 @@ class PostsController < ApplicationController
     current_user.likes.find_by(likable: @post)&.destroy
   end
 
-  # POST /posts
-  # POST /posts.json
   def create
     @post = current_user.posts.build(post_params)
 
@@ -39,20 +28,16 @@ class PostsController < ApplicationController
     end
   end
 
-  # DELETE /posts/1
-  # DELETE /posts/1.json
   def destroy
     @post.destroy
   end
 
   private
 
-  # Use callbacks to share common setup or constraints between actions.
   def set_post
     @post = Post.find(params[:id])
   end
 
-  # Only allow a list of trusted parameters through.
   def post_params
     params.require(:post).permit(:body, :image)
   end

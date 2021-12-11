@@ -4,18 +4,23 @@ Rails.application.routes.draw do
       put :like
       put :unlike
     end
-    resources :comments, only: [:create, :destroy]
+    resources :comments, only: [:create, :destroy, :index]
   end
   # For details on the DSL available within this file, see https://guides.rubyonrails.org/routing.html
   resources :users, only: %i[index show] do
     collection do
-      get :find_people
+      get :people
       get :me
     end
 
     member do
-      put :follow
-      put :unfollow
+      get :posts
+      scope controller: :relationships do
+        put :follow
+        put :unfollow
+        get :followers
+        get :following
+      end
     end
   end
   devise_for :users,

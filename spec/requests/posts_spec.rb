@@ -298,4 +298,48 @@ RSpec.describe "/posts", type: :request do
       }.to change(Post, :count).by(-1)
     end
   end
+
+  describe "GET /users/:id/posts" do
+    let!(:user) { create :user }
+    context "unauthenticated user" do
+      it "returns 401 unauthorized" do
+        get user_posts_url(user), xhr: true
+        expect(response).to have_http_status(:unauthorized)
+      end
+    end
+    context "authenticated user" do
+      it "should return a successful response" do
+        get user_posts_url(user), xhr: true, headers: { 'Authorization': token_for(create :user) }
+        expect(response).to have_http_status(:ok)
+      end
+
+      it "returns a paginated list of user's posts in ascending order" do
+        random_count = rand((rand(3..5) * Post.per_page)..(rand(6..8) * Post.per_page))
+        posts = create_list :post, random_count
+        user1 = create :user
+        user1.posts << posts.sample(random_count / 2)
+
+        get user_posts_url(user1), xhr: true, headers: valid_headers
+
+        user1.reload
+
+        expect(json["data"].length).to eq(Post.per_page)
+        expect(json["_pagination"]["count"] <= Post.per_page).to be_truthy
+        expect(json["_pagination"]["total_count"]).to eq user1.posts.count
+        expect(json["_links"]["next_page"]).not_to be_nil
+        expect(json["_links"]["prev_page"]).to be_nil
+        expect(json["_links"]).not_to be_nil
+        total_pages = (user1.posts.count.to_f / Post.per_page).ceil
+        expect(json["_pagination"]["total_pages"]).to eq total_pages
+
+        expect(json["_links"]["last_page"]).to eq posts_url(page: total_pages)
+
+        get json["_links"]["last_page"], headers: valid_headers, xhr: true
+        debugger
+        expect(json["_links"]["next_page"]).to be_nil
+        expect(json["_links"]["prev_page"]).not_to be_nil
+        expect(json["data"].length <= Post.per_page).to be_truthy
+      end
+    end
+  end
 end

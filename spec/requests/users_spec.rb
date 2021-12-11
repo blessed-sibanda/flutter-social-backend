@@ -273,6 +273,81 @@ RSpec.describe "Users", type: :request do
     end
   end
 
+  describe "GET /users/:id/followers" do
+    let!(:user) { create :user }
+    context "unauthenticated user" do
+      it "returns 401 unauthorized" do
+        get followers_user_url(user), xhr: true
+        expect(response).to have_http_status(:unauthorized)
+      end
+    end
+    context "authenticated user" do
+      it "should return a successful response" do
+        get followers_user_url(user), xhr: true, headers: { 'Authorization': token_for(create :user) }
+        expect(response).to have_http_status(:ok)
+      end
+
+      it "returns a paginated list of followers (without email addresses) in ascending order" do
+        random_count1 = rand((rand(3..5) * User.per_page)..(rand(6..8) * User.per_page))
+        users = create_list :user, random_count1
+        user.followers << users.sample(random_count1 / 2)
+
+        get followers_user_url(user), xhr: true, headers: { 'Authorization': token_for(create :user) }
+
+        expect(json["data"].length <= User.per_page).to be_truthy
+        expect(json["_pagination"]).not_to be_nil
+        expect(json["_pagination"]["count"] <= User.per_page).to be_truthy
+        expect(json["_pagination"]["total_count"]).to eq user.followers.count
+        expect(json["_links"]["next_page"]).not_to be_nil
+        expect(json["_links"]).not_to be_nil
+        total_pages = (user.followers.count.to_f / User.per_page).ceil
+        expect(json["_pagination"]["total_pages"]).to eq total_pages
+        expect(json["data"][rand(User.per_page)]["email"]).to be_nil
+        expect(json["data"][rand(User.per_page)]["name"]).not_to be_nil
+
+        expect(json["data"][0]["id"] < json["data"][-1]["id"]).to be_truthy
+      end
+    end
+  end
+
+  describe "GET /users/:id/following" do
+    let!(:user) { create :user }
+    context "unauthenticated user" do
+      it "returns 401 unauthorized" do
+        get following_user_url(user), xhr: true
+        expect(response).to have_http_status(:unauthorized)
+      end
+    end
+    context "authenticated user" do
+      it "should return a successful response" do
+        get following_user_url(user), xhr: true, headers: { 'Authorization': token_for(create :user) }
+        expect(response).to have_http_status(:ok)
+      end
+
+      it "returns a paginated list of following (without email addresses) in ascending order" do
+        random_count1 = rand((rand(3..5) * User.per_page)..(rand(6..8) * User.per_page))
+        users = create_list :user, random_count1
+        user.following << users.sample(random_count1 / 2)
+
+        get following_user_url(user), xhr: true, headers: { 'Authorization': token_for(create :user) }
+
+        expect(json["data"].length <= User.per_page).to be_truthy
+        expect(json["_pagination"]).not_to be_nil
+        expect(json["_pagination"]["count"] <= User.per_page).to be_truthy
+        expect(json["_pagination"]["total_count"]).to eq user.following.count
+        expect(json["_links"]["next_page"]).to eq following_user_url(page: 2)
+        expect(json["_links"]["current_page"]).to eq following_user_url(page: 1)
+
+        total_pages = (user.following.count.to_f / User.per_page).ceil
+        expect(json["_pagination"]["total_pages"]).to eq total_pages
+        expect(json["data"][rand(User.per_page)]["email"]).to be_nil
+        expect(json["data"][rand(User.per_page)]["name"]).not_to be_nil
+
+        expect(json["data"][0]["id"] < json["data"][-1]["id"]).to be_truthy
+      end
+    end
+  end
+
   describe "POST /confirmation" do
     context "for unconfirmed user" do
       it "resends account confirmation email" do

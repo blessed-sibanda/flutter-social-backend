@@ -37,9 +37,14 @@ module FlutterSocialBackend
     # Skip views, helpers and assets when generating a new resource.
     # This also configures session_options for use below
 
+    config.middleware.use ActionDispatch::Flash
+
     config.middleware.use ActionDispatch::Cookies
+
     config.middleware.use Rack::MethodOverride
 
     config.api_only = true
+
+    config.middleware.use ActionDispatch::Flash
   end
 end

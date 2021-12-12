@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 class Auth::SessionsController < Devise::SessionsController
+  respond_to :json, :html
 
   # before_action :configure_sign_in_params, only: [:create]
 

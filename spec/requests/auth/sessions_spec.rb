@@ -38,10 +38,10 @@ RSpec.describe "Auth::Sessions", type: :request do
 
       it "succeeds" do
         user = create :user
-        post user_session_url, xhr: true,
-                               params: {
-                                 user: valid_attributes,
-                               }
+        post user_session_url(format: "json"), xhr: true,
+                                               params: {
+                                                 user: valid_attributes,
+                                               }
         expect(response).to have_http_status(:created)
       end
     end

@@ -23,7 +23,7 @@ Rails.application.routes.draw do
       end
     end
   end
-  devise_for :users, defaults: { format: "json" },
+  devise_for :users, 
             path: "",
             path_names: {
               sign_in: "api/login",
@@ -33,5 +33,6 @@ Rails.application.routes.draw do
             controllers: {
               sessions: "auth/sessions",
               registrations: "auth/registrations",
+              passwords: 'auth/passwords',
             }
 end

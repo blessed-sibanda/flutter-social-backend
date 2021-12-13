@@ -7,6 +7,10 @@ class RelationshipsController < ApplicationController
       .where(id: @user.follower_ids).order(:created_at)
   end
 
+  def is_following
+    @result = @user.followers.include? current_user
+  end
+
   def following
     @following = User.page(params[:page]).per(User.per_page)
       .where(id: @user.following_ids).order(:created_at)

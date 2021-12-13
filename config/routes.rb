@@ -20,19 +20,20 @@ Rails.application.routes.draw do
         put :unfollow
         get :followers
         get :following
+        get :is_following
       end
     end
   end
-  devise_for :users, 
-            path: "",
-            path_names: {
-              sign_in: "api/login",
-              sign_out: "api/logout",
-              registration: "api/signup",
-            },
-            controllers: {
-              sessions: "auth/sessions",
-              registrations: "auth/registrations",
-              passwords: 'auth/passwords',
-            }
+  devise_for :users,
+             path: "",
+             path_names: {
+               sign_in: "api/login",
+               sign_out: "api/logout",
+               registration: "api/signup",
+             },
+             controllers: {
+               sessions: "auth/sessions",
+               registrations: "auth/registrations",
+               passwords: "auth/passwords",
+             }
 end

@@ -17,5 +17,9 @@ RSpec.describe RelationshipsController, type: :routing do
     it "routes to #following" do
       expect(get: "/users/1/following").to route_to("relationships#following", id: "1")
     end
+
+    it "routes to #is_following" do
+      expect(get: "/users/1/is_following").to route_to("relationships#is_following", id: "1")
+    end
   end
 end

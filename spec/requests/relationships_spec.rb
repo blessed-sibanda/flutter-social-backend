@@ -9,6 +9,28 @@ RSpec.describe "Relationships", type: :request do
     }
   }
 
+  describe "GET /users/:id/is_following" do
+    let!(:user1) { create :user }
+
+    context "authenticated user" do
+      it "returns true if requesting user is a follower" do
+        user1.followers << user
+        get is_following_user_url(user1), xhr: true, headers: valid_headers
+        expect(json["result"]).to be_truthy
+      end
+
+      it "returns false if requesting user is not a follower" do
+        get is_following_user_url(user), xhr: true, headers: valid_headers
+        expect(json["result"]).to be_falsy
+      end
+    end
+
+    it "returns 401 unauthorized for unauthenticated requests" do
+      get is_following_user_url(user), xhr: true
+      expect(response).to have_http_status(:unauthorized)
+    end
+  end
+
   describe "PUT /users/:id/follow" do
     context "authenticated" do
       it "follows user" do

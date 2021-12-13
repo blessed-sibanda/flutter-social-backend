@@ -12,4 +12,6 @@ json._meta do
   json.per_page per_page
   json.count data.count
   json.total_count data.total_count
+  json.total_pages data.total_pages
+  json.current_page data.current_page
 end

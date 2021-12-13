@@ -1,5 +1,5 @@
 class User < ApplicationRecord
-  self.per_page = 10
+  self.per_page = 15
   # Include default devise modules. Others available are:
   # :confirmable, :lockable, :timeoutable, :trackable and :omniauthable
   devise :database_authenticatable, :registerable,

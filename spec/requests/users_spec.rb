@@ -40,6 +40,27 @@ RSpec.describe "Users", type: :request do
         expect(response).to have_http_status(:success)
       end
 
+      it 'returns user\'s unconfirmed email (if its there)' do
+        @token = token_for(user)
+        original_email = user.email
+        new_email = "new-email@example.com"
+
+        put "/api/signup", xhr: true, headers: valid_headers,
+                           params: { user: { current_password: "my-secret", email: new_email } }
+        user.reload
+        expect(user.unconfirmed_email).to eq new_email
+        get "/users/#{user.id}", xhr: true, headers: valid_headers
+        expect(json["email"]).to eq original_email
+        expect(json["unconfirmed_email"]).to eq new_email
+
+        check_confirmation_email_for user, user.unconfirmed_email
+        user.reload
+
+        get "/users/#{user.id}", xhr: true, headers: valid_headers
+        expect(json["email"]).to eq new_email
+        expect(json["unconfirmed_email"]).to be_nil
+      end
+
       context "with about info" do
         it "displays user about" do
           user = create :user, about: "This is my information"

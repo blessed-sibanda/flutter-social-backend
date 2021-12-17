@@ -22,23 +22,6 @@ RSpec.describe "Auth::Registrations", type: :request do
     { 'Authorization': token_for(user) }
   end
 
-  def check_confirmation_email_for(user)
-    perform_enqueued_jobs
-
-    email = find_email(user.email)
-    expect(email).not_to be_nil
-    expect(email.subject).to eq "Confirmation instructions"
-
-    confirmation_link = get_link_by_text(email.body, "Confirm my account")
-    expect(confirmation_link).to_not be_nil
-
-    confirmation_url = confirmation_link.attributes["href"].value
-
-    expect(user.reload.confirmed?).to be_falsey
-    get confirmation_url, xhr: true
-    expect(user.reload.confirmed?).to be_truthy
-  end
-
   describe "POST /api/signup" do
     context "with valid attributes" do
       it "creates new user" do

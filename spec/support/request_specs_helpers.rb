@@ -30,6 +30,23 @@ module RequestSpecsHelpers
     end
   end
 
+  def check_confirmation_email_for(user, email_address = "")
+    perform_enqueued_jobs
+
+    email = find_email(email_address.empty? ? user.email : email_address)
+    expect(email).not_to be_nil
+    expect(email.subject).to eq "Confirmation instructions"
+
+    confirmation_link = get_link_by_text(email.body, "Confirm my account")
+    expect(confirmation_link).to_not be_nil
+
+    confirmation_url = confirmation_link.attributes["href"].value
+
+    expect(user.reload.confirmed?).to be_falsey if email_address.empty?
+    get confirmation_url, xhr: true
+    expect(user.reload.confirmed?).to be_truthy
+  end
+
   def random_paginable_data(entity, per_page:)
     lower = rand(3..5) * per_page
     upper = rand(6..8) * per_page
